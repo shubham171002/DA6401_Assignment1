@@ -1,15 +1,26 @@
 import numpy as np
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))
+
 from utils.activations import relu, tanh, sigmoid, softmax
 from utils.activations import relu_derivative, tanh_derivative, sigmoid_derivative
 from utils.loss_functions import cross_entropy,mean_squared_error
-from optimizers.sgd import sgd_update,momentum_update,nesterov_update,rmsprop_update,adam_update,nadam_update
+
+from optimizers.sgd import sgd_update
+from optimizers.momentum import momentum_update
+from optimizers.nag import nesterov_update
+from optimizers.rmsprop import rmsprop_update
+from optimizers.adam import adam_update 
+from optimizers.nadam import nadam_update
 
 class FeedforwardNeuralNetwork:
-    def __init__(self, input_size, hidden_layers, hidden_size, output_size, activation,weight_init='random'):
+    def __init__(self, input_size, hidden_layers, hidden_size, output_size, activation,weight_init,loss_type='cross_entropy'):
         self.input_size = input_size
         self.hidden_layers = hidden_layers
         self.hidden_size = hidden_size
         self.output_size = output_size
+        self.loss_type = loss_type
 
         # Activation functions
         activations = {"sigmoid": sigmoid, "tanh": tanh, "ReLU": relu}
@@ -68,7 +79,10 @@ class FeedforwardNeuralNetwork:
 
         # Last layer to output
         z = np.dot(a, self.weights[-1]) + self.biases[-1]
-        a = softmax(z)
+        if self.loss_type == 'cross_entropy':
+            a = softmax(z)
+        else:
+            a = z
 
         self.z.append(z)
         self.a.append(a)
@@ -76,38 +90,49 @@ class FeedforwardNeuralNetwork:
 
     def backwardpass(self, X, y_true, learning_rate, optimizer, epoch):
         m = X.shape[0]
-        y_pred = self.a[-1]  # Softmax output
-
-        # Compute gradients for output layer
-        dz = (y_pred - y_true) / m
-        dw = np.dot(self.a[-2].T, dz)
-        db = np.sum(dz, axis=0, keepdims=True)
-
-        dW = [dw]
-        dB = [db]
-        dZ = [dz]
-
-        # Backpropagation through hidden layers
-        for i in range(self.hidden_layers - 1, 0, -1):
-            dz = np.dot(dz, self.weights[i + 1].T) * self.activation_derivative(self.a[i - 1])
-            dw = np.dot(self.a[i - 1].T, dz)
-            db = np.sum(dz, axis=0, keepdims=True)
-
-            dZ.insert(0, dz)
-            dW.insert(0, dw)
-            dB.insert(0, db)
-
-        # First hidden layer
-        dz = np.dot(dz, self.weights[1].T) * self.activation_derivative(self.a[0])
-        dw = np.dot(X.T, dz)
-        db = np.sum(dz, axis=0, keepdims=True)
-
-        dZ.insert(0, dz)
-        dW.insert(0, dw)
-        dB.insert(0, db)
-
+        # Convert labels to one-hot encoding if needed
+        if y_true.ndim == 1:
+            y_true = np.eye(self.output_size)[y_true]
+    
+        # Total number of layers (hidden + output)
+        L = len(self.weights)  # output layer index is L-1; hidden layers: 0 to L-2
+    
+        # ----- Output Layer -----
+        # self.a[-1] is the output activation (after softmax if cross_entropy)
+        a_out = self.a[-1]
+        if self.loss_type == 'cross_entropy':
+            dZ = (a_out - y_true) / m
+        else:
+            dZ = 2 * (a_out - y_true) / m
+    
+        # Gradients for the output layer weights and biases
+        dW = [None] * L
+        dB = [None] * L
+        # Last hidden layer activation is self.a[-2]
+        dW[L - 1] = np.dot(self.a[-2].T, dZ)
+        dB[L - 1] = np.sum(dZ, axis=0, keepdims=True)
+    
+        # ----- Backpropagation for Hidden Layers -----
+        # Propagate the gradient from the output layer
+        dA = np.dot(dZ, self.weights[L - 1].T)
+    
+        # Loop backwards over hidden layers (from last hidden layer to first)
+        for l in range(L - 2, -1, -1):
+            # Compute dZ for the current hidden layer using the activation derivative
+            dZ = dA * self.activation_derivative(self.z[l])
+            # For the first hidden layer, use X as input; otherwise, use previous layer's activation
+            if l == 0:
+                dW[l] = np.dot(X.T, dZ)
+            else:
+                dW[l] = np.dot(self.a[l - 1].T, dZ)
+            dB[l] = np.sum(dZ, axis=0, keepdims=True)
+            # If not at the first hidden layer, propagate the gradient to the previous layer
+            if l > 0:
+                dA = np.dot(dZ, self.weights[l].T)
+    
         # Update weights using the chosen optimizer
         self.update_weights(dW, dB, learning_rate, optimizer, epoch)
+
 
     def update_weights(self, dW, dB, learning_rate, optimizer, epoch):
         if optimizer == "sgd":
@@ -124,7 +149,7 @@ class FeedforwardNeuralNetwork:
             nadam_update(self.weights, self.biases, dW, dB, learning_rate, self.m, self.v, epoch)
 
     def compute_loss(self, loss_type,y_true, y_pred):
-        if loss_type == 'corss_entropy':
+        if loss_type == 'cross_entropy':
             return cross_entropy(y_true, y_pred)
         else:
             return mean_squared_error(y_true, y_pred)
