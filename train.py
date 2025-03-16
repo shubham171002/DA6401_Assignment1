@@ -2,10 +2,8 @@ import argparse
 import wandb
 import numpy as np
 from keras.datasets import fashion_mnist, mnist
-
-# Import your network and training functions
 from model.neural_network import FeedforwardNeuralNetwork
-from model.model_training import train
+from model.model_training import train,evaluate
 
 def main():
     parser = argparse.ArgumentParser(
@@ -53,6 +51,15 @@ def main():
 
     args = parser.parse_args()
 
+    optimizer_params = {
+    "momentum": args.momentum,
+    "beta": args.beta,
+    "beta1": args.beta1,
+    "beta2": args.beta2,
+    "epsilon": args.epsilon,
+    "weight_decay": args.weight_decay,
+}
+
     # Initialize wandb with the parsed configuration
     run = wandb.init(
         project=args.wandb_project,
@@ -73,8 +80,6 @@ def main():
         (X_train, y_train), (X_test, y_test) = fashion_mnist.load_data()
     elif config.dataset == "mnist":
         (X_train, y_train), (X_test, y_test) = mnist.load_data()
-    else:
-        raise ValueError("Unsupported dataset specified.")
 
     # Normalize the image data
     X_train = X_train / 255.0
@@ -86,7 +91,7 @@ def main():
     X_train, y_train = X_train[:split_idx], y_train[:split_idx]
 
     # Flatten images for the feedforward neural network
-    input_size = X_train.shape[1] * X_train.shape[2]  # e.g., 28x28 = 784
+    input_size = X_train.shape[1] * X_train.shape[2] 
     X_train = X_train.reshape(-1, input_size)
     X_val = X_val.reshape(-1, input_size)
     X_test = X_test.reshape(-1, input_size)
@@ -116,12 +121,19 @@ def main():
         epochs=config.epochs,
         batch_size=config.batch_size,
         learning_rate=config.learning_rate,
+        optimizer_params=optimizer_params,
         use_wandb=True,
         wandb_module=wandb,
-        loss_type=config.loss,
-        # Note: Ensure that your train() and optimizer implementations can make use of momentum, beta, beta1, beta2, epsilon,
-        # and weight_decay if needed.
+        loss_type=config.loss
     )
+
+    evaluation = evaluate(
+    network=network,
+    X_test=X_test,
+    y_test=y_test,
+    loss_type="cross_entropy"
+    )
+
 
 if __name__ == "__main__":
     main()
