@@ -20,7 +20,6 @@ DA6401_Assignment1/
     ├── swep_config.py
     ├── sweep_train.py                                 
 ├── train.py               # Main training script with command-line arguments
-└── wandb/                 # WandB logs and visualization
 ```
 ## Dataset 
 The Fashion-MNIST dataset consists of 70,000 grayscale images of 28x28 pixels, divided into 10 classes representing various fashion items (e.g., T-shirts, trousers, etc.). The dataset is split into training and testing set.
