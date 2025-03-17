@@ -44,6 +44,7 @@ The Fashion-MNIST dataset consists of 70,000 grayscale images of 28x28 pixels, d
 Command: ```pip install -r requirements.txt```
 ### Step 2 : Run the main script 
 Command: ```python train.py```
+
 Note that there are several other arguments which can be passed while running the above command like wandb_entity and wand_project which are set defaut and no need to change that, set of hyperparameters which are also set default (Measured for the model giving the highest validation accuracy) but can be passed according to suitability.
 Following is the set of main hyperparameters which can be passed as arguments:
 *  --epochs : No of epochs
