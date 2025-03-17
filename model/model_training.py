@@ -1,9 +1,10 @@
-# from sklearn.metrics import confusion_matrix
-# import matplotlib.pyplot as plt
-# import seaborn as sns
+from sklearn.metrics import accuracy_score
 import numpy as np
 
-def train(network, optimizer, X_train, y_train, X_val, y_val, epochs, batch_size, learning_rate, use_wandb=False, wandb_module=None, loss_type="mse"):
+def train(network, optimizer, X_train, y_train, X_val, y_val, epochs, batch_size, learning_rate, use_wandb=False, wandb_module=None, loss_type="mse",optimizer_params=None):
+    if optimizer_params is None:
+        optimizer_params = {}
+
     num_samples = X_train.shape[0]
     history = {'loss': [], 'val_loss': [], 'accuracy': [], 'val_accuracy': []}
 
@@ -39,7 +40,7 @@ def train(network, optimizer, X_train, y_train, X_val, y_val, epochs, batch_size
             epoch_acc += batch_acc
             
             # Backward pass and weight update using the chosen optimizer
-            network.backwardpass(X_batch_flat, y_batch, learning_rate, optimizer, epoch)
+            network.backwardpass(X_batch_flat, y_batch, learning_rate, optimizer, epoch,optimizer_params)
         
         # Average the loss and accuracy over all batches
         epoch_loss /= num_batches
@@ -72,3 +73,24 @@ def train(network, optimizer, X_train, y_train, X_val, y_val, epochs, batch_size
             })
     
     return history
+
+def evaluate(network, X_test, y_test, loss_type="cross_entropy", use_wandb=False, wandb_module=None):
+    # Flatten test data
+    X_test_flat = X_test.reshape(X_test.shape[0], -1)
+
+    # Forward pass on test data
+    y_pred_probs = network.forwardpass(X_test_flat)
+    y_pred = np.argmax(y_pred_probs, axis=1)
+
+    # Compute test accuracy
+    test_acc = accuracy_score(y_test, y_pred)
+
+    # Compute loss on test set
+    test_loss = network.compute_loss(loss_type, y_test, y_pred_probs)
+
+    # Print classification report
+    print("Test Set Evaluation:")
+    print(f"Test Accuracy: {test_acc*100:.2f}")
+    print(f"Test Loss: {test_loss:.4f}")
+
+    return {'test_accuracy': test_acc,'test_loss': test_loss}
