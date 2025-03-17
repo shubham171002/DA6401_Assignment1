@@ -45,7 +45,8 @@ Command: ```pip install -r requirements.txt```
 ### Step 2 : Run the main script 
 Command: ```python train.py```
 
-Note that there are several other arguments which can be passed while running the above command like wandb_entity and wand_project which are set defaut and no need to change that, set of hyperparameters which are also set default (Measured for the model giving the highest validation accuracy) but can be passed according to suitability.
+Note that there are several other arguments which can be passed while running the above command like wandb_entity and wand_project which are set defaut and in order to run this code in your system you will have specify your wandb project name and project entity, set of hyperparameters which are also set default (Measured for the model giving the highest validation accuracy) can be changed according to suitability by passing as command line arguments.
+
 Following is the set of main hyperparameters which can be passed as arguments:
 *  --epochs : No of epochs
 *  --loss : Loss function (cross entropy or MSE)
