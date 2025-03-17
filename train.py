@@ -20,11 +20,11 @@ def main():
     # Training parameters
     parser.add_argument("-e", "--epochs", type=int, default=10,
                         help="Number of epochs to train neural network.")
-    parser.add_argument("-b", "--batch_size", type=int, default=64,
+    parser.add_argument("-b", "--batch_size", type=int, default=32,
                         help="Batch size used to train neural network.")
     parser.add_argument("-l", "--loss", type=str, choices=["mean_squared_error", "cross_entropy"], default="cross_entropy",
                         help="Loss function to use.")
-    parser.add_argument("-o", "--optimizer", type=str, choices=["sgd", "momentum", "nag", "rmsprop", "adam", "nadam"], default="adam",
+    parser.add_argument("-o", "--optimizer", type=str, choices=["sgd", "momentum", "nag", "rmsprop", "adam", "nadam"], default="rmsprop",
                         help="Optimizer to use.")
     parser.add_argument("-lr", "--learning_rate", type=float, default=0.001,
                         help="Learning rate used to optimize model parameters")
@@ -42,7 +42,7 @@ def main():
                         help="Weight decay used by optimizers.")
     parser.add_argument("-w_i", "--weight_init", type=str, choices=["random", "Xavier"], default="Xavier",
                         help="Weight initialization method.")
-    parser.add_argument("-nhl", "--num_layers", type=int, default=2,
+    parser.add_argument("-nhl", "--num_layers", type=int, default=4,
                         help="Number of hidden layers used in feedforward neural network.")
     parser.add_argument("-sz", "--hidden_size", type=int, default=128,
                         help="Number of hidden neurons in a feedforward layer.")
